@@ -10,7 +10,7 @@ Python3 project that can perform following things:
 1. Register your app on [superjob.ru](https://api.superjob.ru/register) (Fill form with random info, they are not checking).
 3. Create file ```.env``` in the directory with this script and put there your secret key, which can be found [here](https://api.superjob.ru/info/) ```.env``` file should look like this
 ```
-SECRET_KEY=v3.r.130579387.1c87a178bb1c0dba3d4625093647117eab63d840.6780321530564ee19a2eecab8dde17a9b0666417
+SUPERJOB_APP_KEY=v3.r.130579387.1c87a178bb1c0dba3d4625093647117eab63d840.6780321530564ee19a2eecab8dde17a9b0666417
 ```
 but with your data instead of presented above.
 

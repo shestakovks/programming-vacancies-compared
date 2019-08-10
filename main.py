@@ -155,7 +155,7 @@ def print_statistics(data, title):
 
 if __name__ == "__main__":
     load_dotenv()
-    secret_key = os.getenv('SECRET_KEY')
+    secret_key = os.getenv('SUPERJOB_APP_KEY')
     prog_langs = [
         'Python',
         'JavaScript',

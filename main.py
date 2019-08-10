@@ -30,10 +30,11 @@ def download_data_hh(url, params, verbose=True):
         if verbose:
             print(f'Downloading page {page}')
         params['page'] = page
-        page_data = requests.get(url, params).json()
-        pages = page_data['pages']
+        page_data = requests.get(url, params)
+        page_data.raise_for_status()
+        pages = page_data.json()['pages']
         page += 1
-        data.append(page_data)
+        data.append(page_data.json())
     return data
 
 
@@ -50,27 +51,29 @@ def get_statistics_hh(prog_langs, verbose=True):
         params['text'] = f'name:Программист {prog_lang}'
         if verbose:
             print(prog_lang)
-        vacancies_data = download_data_hh(url, params, verbose=verbose)
+        try:
+            vacancies_data = download_data_hh(url, params, verbose=verbose)
+            total_salary = 0
+            average_salary = 0
+            vacancies_processed = 0
+            vacancies_found = vacancies_data[-1]['found']
+            vacancies = [item for sublist in vacancies_data
+                         for item in sublist['items']]
+            for vacancy in vacancies:
+                avg_salary = predict_rub_salary_hh(vacancy)
+                if avg_salary is not None:
+                    vacancies_processed += 1
+                    total_salary += avg_salary
+            if total_salary != 0:
+                average_salary = int(total_salary / vacancies_processed)
 
-        total_salary = 0
-        average_salary = 0
-        vacancies_processed = 0
-        vacancies_found = vacancies_data[-1]['found']
-        vacancies = [item for sublist in vacancies_data
-                     for item in sublist['items']]
-        for vacancy in vacancies:
-            avg_salary = predict_rub_salary_hh(vacancy)
-            if avg_salary is not None:
-                vacancies_processed += 1
-                total_salary += avg_salary
-        if total_salary != 0:
-            average_salary = int(total_salary / vacancies_processed)
-
-        vacancies_info[prog_lang] = {
-            'vacancies_found': vacancies_found,
-            'vacancies_processed': vacancies_processed,
-            'average_salary': average_salary,
-        }
+            vacancies_info[prog_lang] = {
+                'vacancies_found': vacancies_found,
+                'vacancies_processed': vacancies_processed,
+                'average_salary': average_salary,
+            }
+        except requests.exceptions.HTTPError as e:
+            print(f'Error occurred: "{e}"')
     return vacancies_info
 
 
@@ -94,10 +97,11 @@ def download_data_sj(url, headers, params, verbose=True):
         if verbose:
             print(f'Downloading page {page}')
         params['page'] = page
-        page_data = requests.get(url, headers=headers, params=params).json()
-        is_not_last_page = page_data['more']
+        page_data = requests.get(url, headers=headers, params=params)
+        page_data.raise_for_status()
+        is_not_last_page = page_data.json()['more']
         page += 1
-        data.append(page_data)
+        data.append(page_data.json())
     return data
 
 
@@ -117,32 +121,38 @@ def get_statistics_sj(secret_key, prog_langs, verbose=True):
         params['keyword'] = prog_lang
         if verbose:
             print(prog_lang)
-        vacancies_data = download_data_sj(
-            url, headers, params, verbose=verbose)
+        try:
+            vacancies_data = download_data_sj(
+                url, headers, params, verbose=verbose)
 
-        total_salary = 0
-        average_salary = 0
-        vacancies_processed = 0
-        vacancies_found = vacancies_data[-1]['total']
-        vacancies = [item for sublist in vacancies_data
-                     for item in sublist['objects']]
-        for vacancy in vacancies:
-            avg_salary = predict_rub_salary_sj(vacancy)
-            if avg_salary is not None:
-                vacancies_processed += 1
-                total_salary += avg_salary
-        if total_salary != 0:
-            average_salary = int(total_salary / vacancies_processed)
+            total_salary = 0
+            average_salary = 0
+            vacancies_processed = 0
+            vacancies_found = vacancies_data[-1]['total']
+            vacancies = [item for sublist in vacancies_data
+                         for item in sublist['objects']]
+            for vacancy in vacancies:
+                avg_salary = predict_rub_salary_sj(vacancy)
+                if avg_salary is not None:
+                    vacancies_processed += 1
+                    total_salary += avg_salary
+            if total_salary != 0:
+                average_salary = int(total_salary / vacancies_processed)
 
-        vacancies_info[prog_lang] = {
-            'vacancies_found': vacancies_found,
-            'vacancies_processed': vacancies_processed,
-            'average_salary': average_salary,
-        }
+            vacancies_info[prog_lang] = {
+                'vacancies_found': vacancies_found,
+                'vacancies_processed': vacancies_processed,
+                'average_salary': average_salary,
+            }
+        except requests.exceptions.HTTPError as e:
+            print(f'Error occurred: "{e}"')
     return vacancies_info
 
 
 def print_statistics(data, title):
+    if not data:
+        print('No data to print out')
+        return
     keys = [key for key in next(iter(data.values()))]
     table_data = [
         ['language', *keys],
@@ -168,7 +178,7 @@ if __name__ == "__main__":
         'Go',
         'Objective-C',
     ]
-    lang_stat_hh = get_statistics_hh(prog_langs)
+    # lang_stat_hh = get_statistics_hh(prog_langs)
     lang_stat_sj = get_statistics_sj(secret_key, prog_langs)
-    print_statistics(lang_stat_hh, 'HeadHunter Moscow')
+    # print_statistics(lang_stat_hh, 'HeadHunter Moscow')
     print_statistics(lang_stat_sj, 'SuperJob Moscow')

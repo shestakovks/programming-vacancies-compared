@@ -59,11 +59,11 @@ def get_statistics_hh(prog_langs, verbose=True):
             vacancies_found = vacancies_pages[-1]['found']
             vacancies = [vacancy for vacancies_page in vacancies_pages
                          for vacancy in vacancies_page['items']]
-            for vacancy in vacancies:
-                avg_salary = predict_rub_salary_hh(vacancy)
-                if avg_salary is not None:
-                    vacancies_processed += 1
-                    total_salary += avg_salary
+            avg_salaries = [predict_rub_salary_hh(vacancy)
+                            for vacancy in vacancies
+                            if predict_rub_salary_hh(vacancy) is not None]
+            vacancies_processed = len(avg_salaries)
+            total_salary = sum(avg_salaries)
             if total_salary != 0:
                 average_salary = int(total_salary / vacancies_processed)
 
@@ -131,11 +131,11 @@ def get_statistics_sj(secret_key, prog_langs, verbose=True):
             vacancies_found = vacancies_pages[-1]['total']
             vacancies = [vacancy for vacancies_page in vacancies_pages
                          for vacancy in vacancies_page['objects']]
-            for vacancy in vacancies:
-                avg_salary = predict_rub_salary_sj(vacancy)
-                if avg_salary is not None:
-                    vacancies_processed += 1
-                    total_salary += avg_salary
+            avg_salaries = [predict_rub_salary_sj(vacancy)
+                            for vacancy in vacancies
+                            if predict_rub_salary_sj(vacancy) is not None]
+            vacancies_processed = len(avg_salaries)
+            total_salary = sum(avg_salaries)
             if total_salary != 0:
                 average_salary = int(total_salary / vacancies_processed)
 

@@ -18,8 +18,7 @@ def predict_rub_salary_hh(vacancy):
     salary_data = vacancy['salary']
     if salary_data is None or salary_data['currency'] != 'RUR':
         return None
-    else:
-        return predict_rub_salary(salary_data['from'], salary_data['to'])
+    return predict_rub_salary(salary_data['from'], salary_data['to'])
 
 
 def download_data_hh(url, params, verbose=True):
@@ -35,46 +34,37 @@ def download_data_hh(url, params, verbose=True):
         pages = page_data.json()['pages']
         page += 1
         data.append(page_data.json())
+    print()
     return data
 
 
-def get_statistics_hh(prog_langs, verbose=True):
+def get_statistics_hh(prog_lang, verbose=True):
     url = 'https://api.hh.ru/vacancies'
     params = {
         'area': 1,  # Moscow
         'period': 30,  # Last month
-        'text': '',
+        'text': f'name:Программист {prog_lang}',
     }
 
-    vacancies_info = {}
-    for prog_lang in prog_langs:
-        params['text'] = f'name:Программист {prog_lang}'
-        if verbose:
-            print(prog_lang)
-        try:
-            vacancies_pages = download_data_hh(url, params, verbose=verbose)
-            total_salary = 0
-            average_salary = 0
-            vacancies_processed = 0
-            vacancies_found = vacancies_pages[-1]['found']
-            vacancies = [vacancy for vacancies_page in vacancies_pages
-                         for vacancy in vacancies_page['items']]
-            avg_salaries = [predict_rub_salary_hh(vacancy)
-                            for vacancy in vacancies
-                            if predict_rub_salary_hh(vacancy) is not None]
-            vacancies_processed = len(avg_salaries)
-            total_salary = sum(avg_salaries)
-            if total_salary != 0:
-                average_salary = int(total_salary / vacancies_processed)
+    lang_stat = {}
+    if verbose:
+        print('HEADHUNTER')
+    try:
+        vacancies_pages = download_data_hh(url, params, verbose=verbose)
 
-            vacancies_info[prog_lang] = {
-                'vacancies_found': vacancies_found,
-                'vacancies_processed': vacancies_processed,
-                'average_salary': average_salary,
-            }
-        except requests.exceptions.HTTPError as e:
-            print(f'Error occurred: "{e}"')
-    return vacancies_info
+        vacancies = [vacancy for vacancies_page in vacancies_pages
+                     for vacancy in vacancies_page['items']]
+        avg_salaries = [predict_rub_salary_hh(vacancy)
+                        for vacancy in vacancies
+                        if predict_rub_salary_hh(vacancy) is not None]
+        lang_stat['vacancies_found'] = vacancies_pages[-1]['found']
+        lang_stat['vacancies_processed'] = len(avg_salaries)
+        lang_stat['average_salary'] = int(
+            sum(avg_salaries) / (len(avg_salaries) or 1))
+
+    except requests.exceptions.HTTPError as e:
+        print(f'Error occurred: "{e}"')
+    return lang_stat
 
 
 def predict_rub_salary_sj(vacancy):
@@ -85,8 +75,7 @@ def predict_rub_salary_sj(vacancy):
 
     if not salary or salary_currency != 'rub':
         return None
-    else:
-        return predict_rub_salary(salary_from, salary_to)
+    return predict_rub_salary(salary_from, salary_to)
 
 
 def download_data_sj(url, headers, params, verbose=True):
@@ -102,51 +91,42 @@ def download_data_sj(url, headers, params, verbose=True):
         is_not_last_page = page_data.json()['more']
         page += 1
         data.append(page_data.json())
+    print()
     return data
 
 
-def get_statistics_sj(secret_key, prog_langs, verbose=True):
+def get_statistics_sj(secret_key, prog_lang, verbose=True):
     headers = {
         'X-Api-App-Id': secret_key,
     }
+    url = 'https://api.superjob.ru/2.0/vacancies/'
     params = {
         'town': 4,  # Moscow
         'period': 30,  # Last month
         'catalogues': 48,  # Development, Programming
+        'keyword': prog_lang,
     }
-    url = 'https://api.superjob.ru/2.0/vacancies/'
 
-    vacancies_info = {}
-    for prog_lang in prog_langs:
-        params['keyword'] = prog_lang
-        if verbose:
-            print(prog_lang)
-        try:
-            vacancies_pages = download_data_sj(
-                url, headers, params, verbose=verbose)
+    lang_stat = {}
+    if verbose:
+        print('SUPERJOB')
+    try:
+        vacancies_pages = download_data_sj(
+            url, headers, params, verbose=verbose)
 
-            total_salary = 0
-            average_salary = 0
-            vacancies_processed = 0
-            vacancies_found = vacancies_pages[-1]['total']
-            vacancies = [vacancy for vacancies_page in vacancies_pages
-                         for vacancy in vacancies_page['objects']]
-            avg_salaries = [predict_rub_salary_sj(vacancy)
-                            for vacancy in vacancies
-                            if predict_rub_salary_sj(vacancy) is not None]
-            vacancies_processed = len(avg_salaries)
-            total_salary = sum(avg_salaries)
-            if total_salary != 0:
-                average_salary = int(total_salary / vacancies_processed)
+        vacancies = [vacancy for vacancies_page in vacancies_pages
+                     for vacancy in vacancies_page['objects']]
+        avg_salaries = [predict_rub_salary_sj(vacancy)
+                        for vacancy in vacancies
+                        if predict_rub_salary_sj(vacancy) is not None]
+        lang_stat['vacancies_found'] = vacancies_pages[-1]['total']
+        lang_stat['vacancies_processed'] = len(avg_salaries)
+        lang_stat['average_salary'] = int(
+            sum(avg_salaries) / (len(avg_salaries) or 1))
 
-            vacancies_info[prog_lang] = {
-                'vacancies_found': vacancies_found,
-                'vacancies_processed': vacancies_processed,
-                'average_salary': average_salary,
-            }
-        except requests.exceptions.HTTPError as e:
-            print(f'Error occurred: "{e}"')
-    return vacancies_info
+    except requests.exceptions.HTTPError as e:
+        print(f'Error occurred: "{e}"')
+    return lang_stat
 
 
 def print_statistics(data, title):
@@ -165,7 +145,7 @@ def print_statistics(data, title):
 
 if __name__ == "__main__":
     load_dotenv()
-    secret_key = os.getenv('SUPERJOB_APP_KEY')
+    sj_app_key = os.getenv('SUPERJOB_APP_KEY')
     prog_langs = [
         'Python',
         'JavaScript',
@@ -178,7 +158,14 @@ if __name__ == "__main__":
         'Go',
         'Objective-C',
     ]
-    lang_stat_hh = get_statistics_hh(prog_langs)
-    lang_stat_sj = get_statistics_sj(secret_key, prog_langs)
-    print_statistics(lang_stat_hh, 'HeadHunter Moscow')
-    print_statistics(lang_stat_sj, 'SuperJob Moscow')
+    verbose = True
+    langs_stat_hh, langs_stat_sj = {}, {}
+    for prog_lang in prog_langs:
+        if verbose:
+            print(prog_lang)
+        lang_stat_hh = get_statistics_hh(prog_lang, verbose=verbose)
+        langs_stat_hh[prog_lang] = lang_stat_hh
+        lang_stat_sj = get_statistics_sj(sj_app_key, prog_lang, verbose=verbose)
+        langs_stat_sj[prog_lang] = lang_stat_sj
+    print_statistics(langs_stat_hh, 'HeadHunter Moscow')
+    print_statistics(langs_stat_sj, 'SuperJob Moscow')

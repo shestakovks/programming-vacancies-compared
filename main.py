@@ -52,13 +52,13 @@ def get_statistics_hh(prog_langs, verbose=True):
         if verbose:
             print(prog_lang)
         try:
-            vacancies_data = download_data_hh(url, params, verbose=verbose)
+            vacancies_pages = download_data_hh(url, params, verbose=verbose)
             total_salary = 0
             average_salary = 0
             vacancies_processed = 0
-            vacancies_found = vacancies_data[-1]['found']
-            vacancies = [item for sublist in vacancies_data
-                         for item in sublist['items']]
+            vacancies_found = vacancies_pages[-1]['found']
+            vacancies = [vacancy for vacancies_page in vacancies_pages
+                         for vacancy in vacancies_page['items']]
             for vacancy in vacancies:
                 avg_salary = predict_rub_salary_hh(vacancy)
                 if avg_salary is not None:
@@ -122,15 +122,15 @@ def get_statistics_sj(secret_key, prog_langs, verbose=True):
         if verbose:
             print(prog_lang)
         try:
-            vacancies_data = download_data_sj(
+            vacancies_pages = download_data_sj(
                 url, headers, params, verbose=verbose)
 
             total_salary = 0
             average_salary = 0
             vacancies_processed = 0
-            vacancies_found = vacancies_data[-1]['total']
-            vacancies = [item for sublist in vacancies_data
-                         for item in sublist['objects']]
+            vacancies_found = vacancies_pages[-1]['total']
+            vacancies = [vacancy for vacancies_page in vacancies_pages
+                         for vacancy in vacancies_page['objects']]
             for vacancy in vacancies:
                 avg_salary = predict_rub_salary_sj(vacancy)
                 if avg_salary is not None:
@@ -178,7 +178,7 @@ if __name__ == "__main__":
         'Go',
         'Objective-C',
     ]
-    # lang_stat_hh = get_statistics_hh(prog_langs)
+    lang_stat_hh = get_statistics_hh(prog_langs)
     lang_stat_sj = get_statistics_sj(secret_key, prog_langs)
-    # print_statistics(lang_stat_hh, 'HeadHunter Moscow')
+    print_statistics(lang_stat_hh, 'HeadHunter Moscow')
     print_statistics(lang_stat_sj, 'SuperJob Moscow')

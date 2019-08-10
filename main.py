@@ -48,7 +48,7 @@ def get_statistics_hh(prog_lang, verbose=True):
 
     lang_stat = {}
     if verbose:
-        print('HEADHUNTER')
+        print(f'{prog_lang} - HEADHUNTER')
     try:
         vacancies_pages = download_data_hh(url, params, verbose=verbose)
 
@@ -109,7 +109,7 @@ def get_statistics_sj(secret_key, prog_lang, verbose=True):
 
     lang_stat = {}
     if verbose:
-        print('SUPERJOB')
+        print(f'{prog_lang} - SUPERJOB')
     try:
         vacancies_pages = download_data_sj(
             url, headers, params, verbose=verbose)
@@ -161,11 +161,9 @@ if __name__ == "__main__":
     verbose = True
     langs_stat_hh, langs_stat_sj = {}, {}
     for prog_lang in prog_langs:
-        if verbose:
-            print(prog_lang)
-        lang_stat_hh = get_statistics_hh(prog_lang, verbose=verbose)
-        langs_stat_hh[prog_lang] = lang_stat_hh
-        lang_stat_sj = get_statistics_sj(sj_app_key, prog_lang, verbose=verbose)
-        langs_stat_sj[prog_lang] = lang_stat_sj
+        langs_stat_hh[prog_lang] = get_statistics_hh(
+            prog_lang, verbose=verbose)
+        langs_stat_sj[prog_lang] = get_statistics_sj(
+            sj_app_key, prog_lang, verbose=verbose)
     print_statistics(langs_stat_hh, 'HeadHunter Moscow')
     print_statistics(langs_stat_sj, 'SuperJob Moscow')
